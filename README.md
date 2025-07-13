@@ -1,148 +1,161 @@
-📄 README.md
+🎨 DayDreamer: AI-Powered Prompt-to-Image Generator
 
+DayDreamer is a React-based web application that converts your text prompts into beautiful AI-generated images using a Stable Diffusion model.
 
-# 🌈 DayDreamer - AI Image Generator
-
-DayDreamer is a cute and responsive full-stack web application that lets you generate dream-like images using text prompts powered by AI.
-
-✨ Built with:
-- Frontend: React + Vite + Bootstrap
-- Backend: Flask + HuggingFace Diffusers (Stable Diffusion)
-- Hosted frontend: Netlify
-- Backend runtime: Google Colab (with ngrok)
-
----
-
-## 🌐 Live Frontend
-
-My frontend is deployed and available at:
-
-🔗 [https://daydreamer07.netlify.app/]   
-📝 Note: You must manually start the backend via Google Colab before using the app.
-
----
-
-## ⚙️ Features
-
-- Enter a creative prompt and generate an image using AI
-- Suggested prompt buttons for inspiration
-- Stylish UI with animations and pastel theme
-- Option to save/download the generated image
-
----
-
-## 📦 Project Structure
-
+📁 Project Structure
+bash
 DayDreamer/
 ├── backend/
-│ ├── app.py # Flask backend
-│ ├── my_model/ # Locally saved model folder
-│ └── .env # (Optional) Environment variables
+│   ├── app.py                # (Optional) Flask backend – if not using Colab
+│   ├── my_model/             # Local model folder (not required when using Colab)
+│   └── .env                  # Hugging Face token (optional)
 │
-├── DayDreamer/ # Frontend Vite React app
-│ ├── public/
-│ ├── src/
-│ │ └── components/ # All components like ImageGenerator.jsx
-│ ├── netlify.toml # Redirect & build config for Netlify
-│ └── package.json
+├── DayDreamer/               # Frontend (Vite + React)
+│   ├── public/
+│   ├── src/
+│   │   └── components/       # All React components
+│   ├── netlify.toml          # Netlify config
+│   └── package.json
 │
-├── .venv/ # Python virtual environment (optional)
-└── README.md # You're reading it!
+├── .venv/                    # Python virtual environment (optional)
+└── README.md                 # This file
 
 
----
+🚀 How It Works
+Frontend (React + Bootstrap)
 
-## 🚀 How to Run Locally (Frontend)
+User enters a prompt.
 
-1. Open terminal and navigate into frontend folder:
-''bash
-cd DayDreamer
-Install dependencies:
+A POST request is sent to the Flask backend (hosted temporarily on Google Colab via ngrok).
 
-''bash
+The backend uses a pre-trained Stable Diffusion model to generate the image and returns it as a base64 string.
+
+Backend (Google Colab + Flask)
+
+Loads the Stable Diffusion model via Hugging Face.
+
+Generates image from prompt.
+
+Returns the image to frontend.
+
+
+🧠 Google Colab Setup (Backend)
+You’ll run the backend on Google Colab every time manually:
+
+1. Open your Colab notebook (Text_To_Image.ipynb)
+Paste the following code blocks step-by-step into separate cells:
+
+🔧 Install Required Packages
+python
+
+!pip install diffusers transformers accelerate --upgrade
+!pip install safetensors
+
+🔐 Login to Hugging Face and Load Model
+python
+
+import torch
+from diffusers import StableDiffusionPipeline
+import matplotlib.pyplot as plt
+from huggingface_hub import login
+
+login("your_huggingface_token_here")  # replace with your token
+
+pipe = StableDiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5",
+    torch_dtype=torch.float16,
+    use_safetensors=True
+).to("cuda")
+
+
+🚀 Run Flask Server with ngrok
+python
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from PIL import Image
+import io
+import base64
+from pyngrok import ngrok
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route('/generate', methods=['POST'])
+def generate_image():
+    prompt = request.json.get("prompt", "")
+    if not prompt:
+        return jsonify({"error": "Prompt is required"}), 400
+    try:
+        image = pipe(prompt).images[0]
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return jsonify({"image": f"data:image/png;base64,{image_base64}"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Start Flask server via ngrok
+
+public_url = ngrok.connect(5000)
+print("🔗 Public URL:", public_url)
+app.run(port=5000)
+💡 Copy the generated ngrok URL (e.g., https://1234abcd.ngrok-free.app)
+
+🌐 React Frontend Setup
+1. Install and Run Locally
+bash
+
+cd DayDreamer/DayDreamer
 npm install
-Start local development server:
-
-''bash
 npm run dev
-App will run on:
 
-arduino
-http://localhost:5173
-🧠 How to Start Backend (via Google Colab)
-Open this notebook in Google Colab:
-
-👉 https://colab.research.google.com
-
-Upload or open your notebook (e.g., Untitled1.ipynb).
-
-Run all the cells in the notebook in order. This will:
-
-Install dependencies (Flask, flask-cors, diffusers, etc.)
-
-Load your pretrained model from /my_model
-
-Start the Flask server on port 5000
-
-Expose it via ngrok (e.g., https://abc123.ngrok-free.app)
-
-Copy the public ngrok URL printed in the output.
-
-Open your React frontend project:
-
-Navigate to: src/components/ImageGenerator.jsx
-
-Replace the backend API URL (in fetch) with the new ngrok URL:
-
-Example:
+3. Update Backend URL
+In your ImageGenerator.jsx:
 
 js
-const response = await fetch("https://abc123.ngrok-free.app/generate", {
-Save the file and refresh your frontend browser (localhost:5173 or Netlify-deployed link).
 
-✅ You’re now connected to your backend!
+const response = await fetch("https://your-ngrok-url.ngrok-free.app/generate", {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ prompt })
+});
+Replace the URL with the one printed by Colab/ngrok.
 
-🧪 Sample Prompt Ideas
-Try these for stunning results:
+📸 Features
+🪄 AI image generation using prompts
 
-A mystical forest with glowing mushrooms
+💾 Save image button
 
-Cyberpunk neon street at night
+🎨 Cute & animated UI with Bootstrap + custom styles
 
-Whimsical underwater tea party
+☁️ Hosted frontend via Netlify
 
-Vintage robot reading newspaper
+☁️ Deploy Frontend (Optional)
+bash
 
-💾 Save Generated Images
-After an image is generated, you’ll see a 💾 Save Image button to download it locally.
+npm install -g netlify-cli
+netlify deploy
+Follow the prompts and deploy your Vite app.
 
-🎨 Styling
-All components are styled with Bootstrap + custom CSS to create a soft pastel, dreamy look. Fonts used:
+⚠️ Notes
+You must start the Google Colab backend manually every time you use the app.
 
-Quicksand (main font)
+ngrok URL changes on every run — update the React component with the new one each time.
 
-Great Vibes (titles)
+🙌 Credits
+React + Bootstrap + Vite
 
-Nunito/Poppins (inputs and buttons)
+Stable Diffusion by HuggingFace
 
-❗ Notes
-You must run the Colab backend every time before using the app.
+Styling inspired by playful pastel UI kits
 
-The ngrok link changes every session.
+Built by [Arpita Gupta]
 
-Make sure your ngrok link is whitelisted in CORS (handled by flask_cors).
 
-📸 Screenshots
-Home Page	Image Generator
 
-👩‍💻 Developed By
-💡 Era Gupta
 
-📜 License
-This project is open-source for educational purposes.
 
-Feel free to contribute, fork, and create your own dream apps!
 
-python
-Let me know if you'd like this README as a downloadable file or if you'd like it ad
+
 
