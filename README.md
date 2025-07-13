@@ -15,7 +15,7 @@ DayDreamer is a cute and responsive full-stack web application that lets you gen
 
 ## 🌐 Live Frontend
 
-Your frontend is deployed and available at:
+My frontend is deployed and available at:
 
 🔗 [https://daydreamer07.netlify.app/]   
 📝 Note: You must manually start the backend via Google Colab before using the app.
